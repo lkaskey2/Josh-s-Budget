@@ -47,7 +47,7 @@
     padding: 24px 16px;
   }
 
-  .page { max-width: 1200px; margin: 0 auto; }
+  .page { max-width: 1400px; margin: 0 auto; }
 
   header {
     display: flex;
@@ -105,7 +105,7 @@
   table {
     border-collapse: collapse;
     width: 100%;
-    min-width: 960px;
+    min-width: 1100px;
     font-size: 13px;
   }
 
@@ -113,7 +113,7 @@
     background: var(--bg2);
     color: var(--text2);
     font-weight: 500;
-    padding: 8px 10px;
+    padding: 8px 4px;
     border-bottom: 0.5px solid var(--border2);
     border-right: 0.5px solid var(--border);
     text-align: center;
@@ -121,8 +121,13 @@
     position: sticky;
     top: 0;
     z-index: 2;
+    min-width: 72px;
   }
-  thead th.cat { text-align: left; min-width: 170px; position: sticky; left: 0; z-index: 3; }
+  thead th.cat { text-align: left; min-width: 160px; position: sticky; left: 0; z-index: 3; }
+  thead th.annual { color: var(--text); font-weight: 500; min-width: 82px; border-left: 1px solid var(--border2); }
+  td.total-cell-annual { font-weight: 500; background: var(--bg2); border-left: 1px solid var(--border2); }
+  td.net-pos-annual { color: var(--green); font-weight: 500; background: var(--bg2); border-left: 1px solid var(--border2); }
+  td.net-neg-annual { color: var(--red); font-weight: 500; background: var(--bg2); border-left: 1px solid var(--border2); }
 
   td {
     padding: 4px 8px;
@@ -188,7 +193,7 @@
   }
 
   input[type=number] {
-    width: 72px;
+    width: 64px;
     border: none;
     background: transparent;
     text-align: right;
@@ -271,7 +276,7 @@
       <th class="cat">Category</th>
       <th>Jan</th><th>Feb</th><th>Mar</th><th>Apr</th><th>May</th><th>Jun</th>
       <th>Jul</th><th>Aug</th><th>Sep</th><th>Oct</th><th>Nov</th><th>Dec</th>
-      <th>Annual</th>
+      <th class="annual">Annual</th>
     </tr></thead>
     <tbody id="tbody"></tbody>
     </table>
