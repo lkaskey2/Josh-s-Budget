@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My First Job Budget</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #ffffff;
+    --bg2: #f5f5f3;
+    --bg3: #eeede9;
+    --text: #1a1a1a;
+    --text2: #666;
+    --border: rgba(0,0,0,0.12);
+    --border2: rgba(0,0,0,0.22);
+    --green: #3B6D11;
+    --red: #A32D2D;
+    --blue: #185FA5;
+    --chart-green: #3B6D11;
+    --chart-red: #E24B4A;
+    --focus: #378ADD55;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1c;
+      --bg2: #252525;
+      --bg3: #2e2e2e;
+      --text: #e8e8e8;
+      --text2: #999;
+      --border: rgba(255,255,255,0.10);
+      --border2: rgba(255,255,255,0.20);
+      --green: #7ec84a;
+      --red: #f07070;
+      --blue: #85B7EB;
+    }
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg3);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 24px 16px;
+  }
+
+  .page { max-width: 1200px; margin: 0 auto; }
+
+  header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  h1 { font-size: 22px; font-weight: 500; color: var(--text); }
+  .subtitle { font-size: 14px; color: var(--text2); }
+
+  .save-indicator {
+    font-size: 12px;
+    color: var(--text2);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .save-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--green);
+    transition: background 0.3s;
+  }
+  .save-dot.saving { background: #BA7517; }
+
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .metric {
+    background: var(--bg);
+    border: 0.5px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+  }
+  .metric-label { font-size: 13px; color: var(--text2); margin-bottom: 6px; }
+  .metric-value { font-size: 26px; font-weight: 500; }
+  .pos { color: var(--green); }
+  .neg { color: var(--red); }
+
+  .grid-wrap {
+    background: var(--bg);
+    border: 0.5px solid var(--border);
+    border-radius: 10px;
+    overflow-x: auto;
+    margin-bottom: 20px;
+  }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 960px;
+    font-size: 13px;
+  }
+
+  thead th {
+    background: var(--bg2);
+    color: var(--text2);
+    font-weight: 500;
+    padding: 8px 10px;
+    border-bottom: 0.5px solid var(--border2);
+    border-right: 0.5px solid var(--border);
+    text-align: center;
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+  thead th.cat { text-align: left; min-width: 170px; position: sticky; left: 0; z-index: 3; }
+
+  td {
+    padding: 4px 8px;
+    border-bottom: 0.5px solid var(--border);
+    border-right: 0.5px solid var(--border);
+    text-align: right;
+    color: var(--text);
+  }
+  td.cat-label {
+    text-align: left;
+    padding-left: 20px;
+    white-space: nowrap;
+    background: var(--bg);
+    position: sticky;
+    left: 0;
+  }
+  td.section-head {
+    font-weight: 500;
+    background: var(--bg2);
+    padding: 7px 10px;
+    text-align: left;
+    color: var(--text);
+    letter-spacing: 0.02em;
+    font-size: 12px;
+    text-transform: uppercase;
+    position: sticky;
+    left: 0;
+  }
+  td.section-head-full {
+    font-weight: 500;
+    background: var(--bg2);
+    padding: 7px 10px;
+    text-align: left;
+    color: var(--text);
+    letter-spacing: 0.02em;
+    font-size: 12px;
+    text-transform: uppercase;
+  }
+  td.total-cell {
+    font-weight: 500;
+    background: var(--bg2);
+    color: var(--text);
+  }
+  td.total-label {
+    font-weight: 500;
+    background: var(--bg2);
+    padding-left: 20px;
+    text-align: left;
+    white-space: nowrap;
+    position: sticky;
+    left: 0;
+  }
+  td.net-pos { color: var(--green); font-weight: 500; background: var(--bg2); }
+  td.net-neg { color: var(--red); font-weight: 500; background: var(--bg2); }
+  td.net-label {
+    font-weight: 500;
+    background: var(--bg2);
+    padding-left: 20px;
+    text-align: left;
+    white-space: nowrap;
+    position: sticky;
+    left: 0;
+  }
+
+  input[type=number] {
+    width: 72px;
+    border: none;
+    background: transparent;
+    text-align: right;
+    font-size: 13px;
+    color: var(--text);
+    padding: 3px 2px;
+    outline: none;
+    border-radius: 4px;
+    -moz-appearance: textfield;
+  }
+  input[type=number]::-webkit-outer-spin-button,
+  input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
+  input[type=number]:focus { background: rgba(55,138,221,0.12); }
+
+  .chart-section {
+    background: var(--bg);
+    border: 0.5px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .chart-title { font-size: 15px; font-weight: 500; margin-bottom: 12px; }
+  .legend {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+    font-size: 12px;
+    color: var(--text2);
+  }
+  .legend span { display: flex; align-items: center; gap: 5px; }
+  .swatch { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+  .hint { font-size: 12px; color: var(--text2); margin-bottom: 20px; }
+
+  .reset-btn {
+    background: transparent;
+    border: 0.5px solid var(--border2);
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-size: 13px;
+    color: var(--text2);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .reset-btn:hover { background: var(--bg2); }
+  .reset-btn:active { transform: scale(0.98); }
+
+  @media (max-width: 600px) {
+    .metrics { grid-template-columns: 1fr; }
+    .metric-value { font-size: 20px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div>
+      <h1>My first job budget</h1>
+      <div class="subtitle">Edit any cell — your changes are saved automatically</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+      <div class="save-indicator">
+        <div class="save-dot" id="save-dot"></div>
+        <span id="save-label">All changes saved</span>
+      </div>
+      <button class="reset-btn" onclick="resetData()">Reset to defaults</button>
+    </div>
+  </header>
+
+  <div class="metrics">
+    <div class="metric"><div class="metric-label">Avg monthly income</div><div class="metric-value" id="c-income">—</div></div>
+    <div class="metric"><div class="metric-label">Avg monthly expenses</div><div class="metric-value" id="c-expenses">—</div></div>
+    <div class="metric"><div class="metric-label">Avg monthly net</div><div class="metric-value" id="c-net">—</div></div>
+  </div>
+
+  <div class="grid-wrap">
+    <table><thead><tr>
+      <th class="cat">Category</th>
+      <th>Jan</th><th>Feb</th><th>Mar</th><th>Apr</th><th>May</th><th>Jun</th>
+      <th>Jul</th><th>Aug</th><th>Sep</th><th>Oct</th><th>Nov</th><th>Dec</th>
+      <th>Annual</th>
+    </tr></thead>
+    <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <p class="hint">Tip: click any number to edit it. All values are saved in your browser and will be here next time you open this file.</p>
+
+  <div class="chart-section">
+    <div class="chart-title">Monthly overview</div>
+    <div class="legend">
+      <span><span class="swatch" style="background:#185FA5"></span>Income</span>
+      <span><span class="swatch" style="background:#A32D2D"></span>Expenses</span>
+      <span><span class="swatch" style="background:#3B6D11"></span>Net (positive)</span>
+      <span><span class="swatch" style="background:#E24B4A"></span>Net (negative)</span>
+    </div>
+    <div style="position:relative;height:280px;">
+      <canvas id="chart" role="img" aria-label="Bar chart of monthly income, expenses, and net savings">Monthly budget chart</canvas>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const STORAGE_KEY = 'firstjob_budget_v1';
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+const DEFAULTS = [
+  {section:'Income', rows:[
+    {label:'Take-home pay',     vals:[2400,2400,2400,2400,2400,2400,2400,2400,2400,2400,2400,2400], income:true},
+    {label:'Parental help',     vals:[200,200,200,200,200,200,200,200,200,200,200,200], income:true},
+    {label:'Other income',      vals:[0,0,0,0,0,0,0,0,0,0,0,0], income:true},
+  ]},
+  {section:'Transportation', rows:[
+    {label:'Car insurance',     vals:[120,120,120,120,120,120,120,120,120,120,120,120]},
+    {label:'Gas / fuel',        vals:[80,80,80,80,80,80,80,80,80,80,80,80]},
+    {label:'Parking / tolls',   vals:[20,20,20,20,20,20,20,20,20,20,20,20]},
+    {label:'Public transit',    vals:[0,0,0,0,0,0,0,0,0,0,0,0]},
+  ]},
+  {section:'Food', rows:[
+    {label:'Groceries',         vals:[250,250,250,250,250,250,250,250,250,250,250,250]},
+    {label:'Dining out',        vals:[150,150,150,150,150,150,150,150,150,150,200,200]},
+    {label:'Coffee',            vals:[40,40,40,40,40,40,40,40,40,40,40,40]},
+  ]},
+  {section:'Subscriptions', rows:[
+    {label:'Phone bill',        vals:[60,60,60,60,60,60,60,60,60,60,60,60]},
+    {label:'Streaming',         vals:[30,30,30,30,30,30,30,30,30,30,30,30]},
+    {label:'Music / gaming',    vals:[25,25,25,25,25,25,25,25,25,25,25,25]},
+  ]},
+  {section:'Clothing', rows:[
+    {label:'Everyday clothing', vals:[50,30,40,60,70,40,50,70,80,60,100,120]},
+    {label:'Shoes / accessories',vals:[20,0,20,20,30,20,20,30,30,20,40,50]},
+    {label:'Work attire',       vals:[50,0,0,0,0,0,0,0,50,0,0,0]},
+  ]},
+  {section:'Savings', rows:[
+    {label:'Emergency fund',    vals:[100,100,100,100,100,100,100,100,100,100,100,100]},
+    {label:'Investing',         vals:[100,100,100,100,100,100,100,100,100,100,100,100]},
+    {label:'Credit card',       vals:[50,50,50,50,50,50,50,50,50,50,50,50]},
+  ]},
+];
+
+function deepClone(obj) { return JSON.parse(JSON.stringify(obj)); }
+
+function loadData() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed && parsed.length === DEFAULTS.length) return parsed;
+    }
+  } catch(e) {}
+  return deepClone(DEFAULTS);
+}
+
+function saveData() {
+  const dot = document.getElementById('save-dot');
+  const lbl = document.getElementById('save-label');
+  dot.classList.add('saving');
+  lbl.textContent = 'Saving…';
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(ROWS));
+    setTimeout(() => {
+      dot.classList.remove('saving');
+      lbl.textContent = 'All changes saved';
+    }, 600);
+  } catch(e) {
+    lbl.textContent = 'Could not save';
+  }
+}
+
+function resetData() {
+  if (!confirm('Reset all values back to the defaults? This cannot be undone.')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  ROWS.length = 0;
+  deepClone(DEFAULTS).forEach(s => ROWS.push(s));
+  buildTable();
+  recalc();
+}
+
+let ROWS = loadData();
+
+function fmt(n) {
+  return (n < 0 ? '-$' : '$') + Math.abs(Math.round(n)).toLocaleString();
+}
+
+function buildTable() {
+  const tb = document.getElementById('tbody');
+  tb.innerHTML = '';
+
+  ROWS.forEach((sec, si) => {
+    // Section header row
+    const hr = document.createElement('tr');
+    const hd = document.createElement('td');
+    hd.colSpan = 14;
+    hd.className = 'section-head-full';
+    hd.textContent = sec.section;
+    hr.appendChild(hd);
+    tb.appendChild(hr);
+
+    // Data rows
+    sec.rows.forEach((row, ri) => {
+      const tr = document.createElement('tr');
+      const tc = document.createElement('td');
+      tc.className = 'cat-label';
+      tc.textContent = row.label;
+      tr.appendChild(tc);
+
+      row.vals.forEach((val, mi) => {
+        const td = document.createElement('td');
+        const inp = document.createElement('input');
+        inp.type = 'number';
+        inp.value = val;
+        inp.dataset.si = si; inp.dataset.ri = ri; inp.dataset.mi = mi;
+        inp.addEventListener('change', function() {
+          ROWS[+this.dataset.si].rows[+this.dataset.ri].vals[+this.dataset.mi] = parseFloat(this.value) || 0;
+          recalc();
+          saveData();
+        });
+        inp.addEventListener('input', function() {
+          ROWS[+this.dataset.si].rows[+this.dataset.ri].vals[+this.dataset.mi] = parseFloat(this.value) || 0;
+          recalc();
+        });
+        td.appendChild(inp);
+        tr.appendChild(td);
+      });
+
+      const tt = document.createElement('td');
+      tt.className = 'total-cell';
+      tt.id = `rt-${si}-${ri}`;
+      tt.textContent = fmt(row.vals.reduce((a,b)=>a+b,0));
+      tr.appendChild(tt);
+      tb.appendChild(tr);
+    });
+
+    // Section total row
+    const totalRow = document.createElement('tr');
+    const tl = document.createElement('td');
+    tl.className = 'total-label';
+    tl.textContent = 'Total ' + sec.section.toLowerCase();
+    totalRow.appendChild(tl);
+    for (let m = 0; m < 12; m++) {
+      const td = document.createElement('td');
+      td.className = 'total-cell';
+      td.id = `st-${si}-${m}`;
+      totalRow.appendChild(td);
+    }
+    const gt = document.createElement('td');
+    gt.className = 'total-cell';
+    gt.id = `sg-${si}`;
+    totalRow.appendChild(gt);
+    tb.appendChild(totalRow);
+  });
+
+  // Income total row
+  const incRow = document.createElement('tr');
+  const il = document.createElement('td'); il.className='total-label'; il.textContent='Total income'; incRow.appendChild(il);
+  for (let m=0;m<12;m++){const td=document.createElement('td');td.className='total-cell';td.id=`inc-${m}`;incRow.appendChild(td);}
+  const igt=document.createElement('td');igt.className='total-cell';igt.id='inc-yr';incRow.appendChild(igt);
+  tb.appendChild(incRow);
+
+  // Expenses total row
+  const expRow = document.createElement('tr');
+  const el = document.createElement('td'); el.className='total-label'; el.textContent='Total expenses'; expRow.appendChild(el);
+  for (let m=0;m<12;m++){const td=document.createElement('td');td.className='total-cell';td.id=`exp-${m}`;expRow.appendChild(td);}
+  const egt=document.createElement('td');egt.className='total-cell';egt.id='exp-yr';expRow.appendChild(egt);
+  tb.appendChild(expRow);
+
+  // Net row
+  const netRow = document.createElement('tr');
+  const nl = document.createElement('td'); nl.className='net-label'; nl.textContent='Net / savings'; netRow.appendChild(nl);
+  for (let m=0;m<12;m++){const td=document.createElement('td');td.id=`net-${m}`;netRow.appendChild(td);}
+  const ngt=document.createElement('td');ngt.id='net-yr';netRow.appendChild(ngt);
+  tb.appendChild(netRow);
+}
+
+let chart;
+
+function recalc() {
+  const incomeByMonth = Array(12).fill(0);
+  const expenseByMonth = Array(12).fill(0);
+
+  ROWS.forEach((sec, si) => {
+    const isIncome = sec.rows.some(r => r.income);
+    let secYearTotal = 0;
+    for (let m = 0; m < 12; m++) {
+      let secMon = 0;
+      sec.rows.forEach((row, ri) => {
+        secMon += row.vals[m];
+        const rt = document.getElementById(`rt-${si}-${ri}`);
+        if (rt) rt.textContent = fmt(row.vals.reduce((a,b)=>a+b,0));
+      });
+      const stEl = document.getElementById(`st-${si}-${m}`);
+      if (stEl) stEl.textContent = fmt(secMon);
+      if (isIncome) incomeByMonth[m] += secMon;
+      else expenseByMonth[m] += secMon;
+      secYearTotal += secMon;
+    }
+    let secTotal = 0;
+    sec.rows.forEach(row => secTotal += row.vals.reduce((a,b)=>a+b,0));
+    const sgEl = document.getElementById(`sg-${si}`);
+    if (sgEl) sgEl.textContent = fmt(secTotal);
+  });
+
+  let incYr = 0, expYr = 0;
+  for (let m = 0; m < 12; m++) {
+    const inc = incomeByMonth[m], exp = expenseByMonth[m], net = inc - exp;
+    const ie = document.getElementById(`inc-${m}`); if(ie){ie.textContent=fmt(inc);ie.className='total-cell';}
+    const ee = document.getElementById(`exp-${m}`); if(ee){ee.textContent=fmt(exp);ee.className='total-cell';}
+    const ne = document.getElementById(`net-${m}`);
+    if (ne) { ne.textContent = fmt(net); ne.className = net >= 0 ? 'net-pos' : 'net-neg'; }
+    incYr += inc; expYr += exp;
+  }
+  const netYr = incYr - expYr;
+  const iye = document.getElementById('inc-yr'); if(iye){iye.textContent=fmt(incYr);iye.className='total-cell';}
+  const eye = document.getElementById('exp-yr'); if(eye){eye.textContent=fmt(expYr);eye.className='total-cell';}
+  const nye = document.getElementById('net-yr');
+  if (nye) { nye.textContent = fmt(netYr); nye.className = netYr >= 0 ? 'net-pos' : 'net-neg'; }
+
+  const avgInc = Math.round(incYr/12), avgExp = Math.round(expYr/12), avgNet = Math.round(netYr/12);
+  document.getElementById('c-income').textContent = fmt(avgInc);
+  document.getElementById('c-expenses').textContent = fmt(avgExp);
+  const cn = document.getElementById('c-net');
+  cn.textContent = fmt(avgNet);
+  cn.className = 'metric-value ' + (avgNet >= 0 ? 'pos' : 'neg');
+
+  const netArr = incomeByMonth.map((v,i) => Math.round(v - expenseByMonth[i]));
+  const netColors = netArr.map(v => v >= 0 ? '#3B6D11' : '#E24B4A');
+  const incArr = incomeByMonth.map(v => Math.round(v));
+  const expArr = expenseByMonth.map(v => Math.round(v));
+
+  if (chart) {
+    chart.data.datasets[0].data = incArr;
+    chart.data.datasets[1].data = expArr;
+    chart.data.datasets[2].data = netArr;
+    chart.data.datasets[2].backgroundColor = netColors;
+    chart.update();
+  } else {
+    chart = new Chart(document.getElementById('chart'), {
+      type: 'bar',
+      data: {
+        labels: MONTHS,
+        datasets: [
+          { label:'Income',   data:incArr, backgroundColor:'#185FA5', borderRadius:4 },
+          { label:'Expenses', data:expArr, backgroundColor:'#A32D2D', borderRadius:4 },
+          { label:'Net',      data:netArr, backgroundColor:netColors, borderRadius:4 },
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color:'#888', autoSkip:false, font:{size:11} }, grid:{color:'rgba(128,128,128,.08)'} },
+          y: { ticks: { color:'#888', callback: v => (v<0?'-$':'$')+Math.abs(v).toLocaleString() }, grid:{color:'rgba(128,128,128,.08)'} }
+        }
+      }
+    });
+  }
+}
+
+buildTable();
+recalc();
+</script>
+</body>
+</html>
